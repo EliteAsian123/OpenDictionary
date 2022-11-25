@@ -1,0 +1,15 @@
+body {
+	padding: 8px;
+}
+
+#search-button {
+	width: 100%;
+}
+
+#result-box {
+	padding: 8px;
+}
+
+h1 {
+	font-weight: bold;
+}
