@@ -20,7 +20,7 @@ function search() {
 function getResult() {
 	const urlParams = new URLSearchParams(window.location.search);
 	if (!urlParams.get("word")) {
-		resultBox.innerHTML = "Search a word above!";
+		resultBox.innerHTML = "<br>Search a word above!";
 		return;
 	}
 
@@ -28,8 +28,9 @@ function getResult() {
 	fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + urlParams.get("word")).then(response => {
 		return response.json();
 	}).then(data => {
+		console.log(data);
 		if (data.title === "No Definitions Found") {
-			resultBox.innerHTML = `No results found for "${urlParams.get("word")}"`;
+			resultBox.innerHTML = `<br>No results found for "${urlParams.get("word")}"`;
 			return;
 		}
 
@@ -50,6 +51,7 @@ function getResult() {
 				html += "</ul>";
 			}
 
+			html += `<i>From <a href="${word.sourceUrls[0]}">${word.sourceUrls[0]}</a>.</i>`
 			html += "<hr>";
 		}
 		html += "<p>*incomplete information</p>"
