@@ -47,6 +47,8 @@ function getResult() {
 
 		if (!urlSynonym && !urlSpecificSynonym) {
 			resultBox.innerHTML = getDefinitionHtml(data, urlWord);
+		} else if (urlSynonym === "all") {
+			resultBox.innerHTML = getAllSynonymsHtml(data, urlWord, urlMore);
 		} else if (urlSynonym) {
 			resultBox.innerHTML = getSynonymHtml(data, urlSynonym, urlMore);
 		} else if (urlSpecificSynonym) {
@@ -55,12 +57,16 @@ function getResult() {
 			window.location = "";
 		}
 	}).catch(i => {
-		resultBox.innerHTML = `<li>Error: ${i}</li>`;
+		resultBox.innerHTML = `Error: ${i}`;
 	});
 }
 
 function getDefinitionHtml(data, urlWord) {
 	let html = "";
+
+	html += `<strong><a href="?word=${urlWord}&s=all">All synonyms for "${urlWord}"</a></strong>`;
+	html += `<hr>`;
+
 	for (const [wordIndex, word] of data.entries()) {
 		html += `<h1>${word.word}</h1>`;
 		if (word.phonetic) {
@@ -71,7 +77,7 @@ function getDefinitionHtml(data, urlWord) {
 			html += `<h3>${meaning.partOfSpeech}</h3>`;
 
 			if (meaning.synonyms.length > 0) {
-				html += `<a href="?word=${urlWord}&s=${wordIndex},${meaningIndex}">General Synonyms</a>`;
+				html += `<i><a href="?word=${urlWord}&s=${wordIndex},${meaningIndex}">General synonyms</a></i>`;
 			}
 
 			html += "<ul>";
@@ -80,7 +86,7 @@ function getDefinitionHtml(data, urlWord) {
 
 				if (definition.synonyms.length > 0) {
 					const params = `?word=${urlWord}&ss=${wordIndex},${meaningIndex},${definitionIndex}`;
-					html += `<span class="more"><a href="${params}">Specific Synonyms</a></span>`;
+					html += `<span class="more"><a href="${params}">Specific synonyms</a></span>`;
 				}
 
 				html += `</li><br>`;
@@ -91,6 +97,27 @@ function getDefinitionHtml(data, urlWord) {
 		html += `<hr>`;
 	}
 	html += `<p>*incomplete information</p>`;
+
+	return html;
+}
+
+function getAllSynonymsHtml(data, urlWord, urlMore) {
+	let html = "";
+
+	html += `<h1>${urlWord}</h1>`;
+	html += `All synonyms for all definitions of "${urlWord}"`;
+
+	// Fetch all synonyms
+	let synonyms = getAllSynonymsFromData(data);
+
+	html += `<ul class="multi-col">`;
+	html += synonymList(urlWord, synonyms, urlMore);
+	html += `</ul>`;
+
+	if (!urlMore) {
+		html += `<strong><a href="?word=${urlWord}&s=all&more=true">`;
+		html += `Load more (sub-synonyms)</a></strong>`;
+	}
 
 	return html;
 }
@@ -155,6 +182,25 @@ function synonymList(word, synonyms, more) {
 	return html;
 }
 
+function getAllSynonymsFromData(data) {
+	let synonyms = [];
+	for (const word of data) {
+		for (const meaning of word.meanings) {
+			for (const synonym of meaning.synonyms) {
+				if (!synonyms.includes(synonym)) synonyms.push(synonym);
+			}
+
+			for (const definition of meaning.definitions) {
+				for (const synonym of definition.synonyms) {
+					if (!synonyms.includes(synonym)) synonyms.push(synonym);
+				}
+			}
+		}
+	}
+
+	return synonyms;
+}
+
 function fetchSubSynonyms(word, ignore) {
 	const id = `s${dynamicId - 1}`;
 	fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + word).then(response => {
@@ -168,20 +214,7 @@ function fetchSubSynonyms(word, ignore) {
 		}
 
 		// Fetch all synonyms
-		let synonyms = [];
-		for (const word of data) {
-			for (const meaning of word.meanings) {
-				for (const synonym of meaning.synonyms) {
-					if (!synonyms.includes(synonym)) synonyms.push(synonym);
-				}
-
-				for (const definition of meaning.definitions) {
-					for (const synonym of definition.synonyms) {
-						if (!synonyms.includes(synonym)) synonyms.push(synonym);
-					}
-				}
-			}
-		}
+		let synonyms = getAllSynonymsFromData(data);
 
 		// Fill
 		let html = "";
